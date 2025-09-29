@@ -46,7 +46,7 @@ export HF_HUB_OFFLINE=1
 export TRANSFORMERS_OFFLINE=1
 
 # Container paths
-PROJECT_DIR="/workspace/memupdate/verl"  # Use submodule verl
+PROJECT_DIR="/workspace/memupdate/verl"
 MEMUPDATE_DIR="/workspace/memupdate"
 
 cd $PROJECT_DIR

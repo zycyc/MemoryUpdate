@@ -26,33 +26,12 @@ The training system requires two models to be downloaded to your HuggingFace cac
 
 ```bash
 # Download Qwen3-8B model
-huggingface-cli download Qwen/Qwen3-8B
+hf download Qwen/Qwen3-8B
 
 # Download Qwen3-Embedding-0.6B model
-huggingface-cli download Qwen/Qwen3-Embedding-0.6B
+hf download Qwen/Qwen3-Embedding-0.6B
 ```
 
-**Find the model snapshot path (needed for training config):**
-
-After starting the Docker container (see Step 4), run:
-
-```bash
-# Enter container
-docker exec -it verl_container bash
-
-# Find Qwen3-8B snapshot path
-ls -la /root/.cache/huggingface/hub/models--Qwen--Qwen3-8B/snapshots/
-
-# The output will show a directory like: 123abc456def7890fedcba0987654321abcdef12
-# This is your snapshot ID - you'll need to update run_training_container.sh with this path
-```
-
-**Update the model path in `run_training_container.sh`:**
-
-Find line 88 and update the snapshot ID to match your downloaded model:
-```bash
-actor_rollout_ref.model.path=/root/.cache/huggingface/hub/models--Qwen--Qwen3-8B/snapshots/YOUR_SNAPSHOT_ID
-```
 
 ### Step 1: Clone Repository
 
@@ -83,11 +62,7 @@ cp .env.example .env
 **Optional settings:**
 - `WANDB_API_KEY`: For logging training metrics to Weights & Biases
 
-### Step 3: LoCoMo Dataset
-
-The LoCoMo dataset is included in the repository at `data/locomo10.json`. No additional download is required.
-
-### Step 4: Start Docker Container
+### Step 3: Start Docker Container
 
 ```bash
 # Run the container startup script
@@ -102,7 +77,28 @@ This script will:
 
 The container will be named `verl_container` and run in the background.
 
-### Step 5: Prepare Data
+**Find the model snapshot path and update training config:**
+
+After the container starts, find your Qwen3-8B snapshot ID:
+
+```bash
+# Enter container
+docker exec -it verl_container bash
+
+# Find Qwen3-8B snapshot path
+ls -la /root/.cache/huggingface/hub/models--Qwen--Qwen3-8B/snapshots/
+
+# The output will show a directory like: 123abc456def7890fedcba0987654321abcdef12
+# Exit the container
+exit
+```
+
+Update `run_training_container.sh` line 88 with your snapshot ID:
+```bash
+actor_rollout_ref.model.path=/root/.cache/huggingface/hub/models--Qwen--Qwen3-8B/snapshots/YOUR_SNAPSHOT_ID
+```
+
+### Step 4: Prepare Data
 
 ```bash
 # Enter the container and preprocess data
@@ -113,7 +109,7 @@ docker exec verl_container bash -c "cd /workspace/memupdate && python3 memupdate
 ```
 
 
-### Step 6: Run Training
+### Step 5: Run Training
 
 ```bash
 # Enter the container and start training
