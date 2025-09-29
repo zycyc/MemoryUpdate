@@ -200,7 +200,6 @@ config/evaluator_config.yaml
 # Custom project ignores
 /tmp/
 scratch/
-debug/
 *.debug.py
 test_*.py
 
