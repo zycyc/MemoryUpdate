@@ -1,6 +1,6 @@
-# memupdate: Memory-Augmented Reinforcement Learning for LLMs
+# MemoryUpdate: Memory-Augmented Reinforcement Learning for LLMs
 
-memupdate trains LLM agents to autonomously optimize memory databases through multi-turn tool interactions using reinforcement learning. The system uses GRPO (w/ a bag of tricks from followup work like Dr. GRPO, DeepSWE, etc.) with distributed training via Ray, SGLang, and FSDP on the LoCoMo dataset.
+`MemoryUpdate` trains LLM agents to autonomously optimize memory databases through multi-turn tool interactions using reinforcement learning. The system uses GRPO (w/ a bag of tricks from followup work like Dr. GRPO, DeepSWE, etc.) with distributed training via Ray, SGLang, and FSDP on the LoCoMo dataset.
 
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
@@ -154,11 +154,8 @@ GRPO Policy Update → Next Episode
 ### Memory Management Tools
 
 1. **SearchMemoryTool**: RAG-based retrieval using semantic similarity
-2. **ManageMemoryTool**: Create/update episodic, semantic, or procedural memories
-3. **DeleteMemoryTool**: Remove memories by ID
-4. **SampleMemoryTool**: Random, diverse, or recent memory sampling
-5. **MergeMemoryTool**: Consolidate related memories (summarize/concatenate/extract)
-6. **SplitMemoryTool**: Decompose complex memories (temporal/thematic/speaker-based)
+2. **ManageMemoryTool**: Create memories in the memory database
+
 
 ### Reward System
 
@@ -166,19 +163,20 @@ The custom `MemoryRewardManager` uses an LLM-as-judge approach:
 
 ```python
 # Binary correctness evaluation
-reward = correct_new (1/0) - correct_old (1/0) + format_reward
+reward = correct_new (1/0) + format_reward
 
 where:
 - correct_new: LLM judge verdict on answer from modified memories
-- correct_old: LLM judge verdict on answer from initial memories
 - format_reward: +0.1 if agent created any memories, -1.0 if none
 ```
 
 **Evaluation Process**:
-1. Retrieve top-5 relevant memories from both states
+1. Old: Retrieve top-5 relevant memories from both states
+2. New: Retrieve all relevant LLM-generated memories from modified state
 2. Generate answer from context using LLM
 3. Compare generated answer vs. ground truth using LLM judge
 4. Return binary correctness (no reward shaping)
+5. Return format reward (+0.1 if agent created any memories, -1.0 if none)
 
 ## Project Structure
 
