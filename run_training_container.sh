@@ -85,7 +85,7 @@ python3 -m verl.trainer.main_ppo \
     data.filter_overlong_prompts_workers=32 \
     data.truncation='error' \
     data.return_raw_chat=True \
-    actor_rollout_ref.model.path=/root/.cache/huggingface/hub/models--Qwen--Qwen3-8B/snapshots/b968826d9c46dd6066d109eabc6255188de91218 \
+    actor_rollout_ref.model.path=TODO_YOUR_MODEL_PATH \
     actor_rollout_ref.actor.optim.lr=1e-6 \
     actor_rollout_ref.model.use_remove_padding=True \
     actor_rollout_ref.actor.loss_agg_mode=seq-mean-token-sum \
