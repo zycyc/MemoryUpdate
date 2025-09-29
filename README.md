@@ -12,7 +12,7 @@ memupdate trains LLM agents to autonomously optimize memory databases through mu
 
 ### Prerequisites
 
-- The repo has been tested on a node of 8 H100s + a remotely served model for LLM-as-judge reward
+- The repo has been tested on a node of 8 H100s (NCCL version 2.22.3+cuda12.6) + a remotely served model through LiteLLM for LLM-as-judge reward 
 - Docker from verl: `verlai/verl:app-verl0.5-transformers4.55.4-sglang0.4.10.post2-mcore0.13.0-te2.2` (see [this link](https://verl.readthedocs.io/en/latest/start/install.html))
 
 #### Required HuggingFace Models

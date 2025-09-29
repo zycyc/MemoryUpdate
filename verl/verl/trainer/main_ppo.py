@@ -322,6 +322,10 @@ class TaskRunner:
             print(f"First shard {k}: {v}")
         print(f"🏢 Initialized {num_shards} sharded MemoryBrokerActors!")
         
+        # Initialize the workers of the trainer.
+        trainer.init_workers()
+        print(f"🏢 All workers initialized for experiment, starting training!")
+        
         # Initialize all raw memory stores for all sample_ids
         if "sample_ids" in conversation_stats:
             sample_ids = conversation_stats["sample_ids"]
@@ -337,10 +341,6 @@ class TaskRunner:
             print(f"🎯 Successfully initialized {len(sample_ids)} raw memory stores")
         else:
             print("⚠️ No sample_ids found in conversation_stats, skipping raw store initialization")
-        
-        # Initialize the workers of the trainer.
-        trainer.init_workers()
-        print(f"🏢 All workers initialized for experiment, starting training!")
         
         trainer.fit()
 
