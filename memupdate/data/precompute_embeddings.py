@@ -8,7 +8,7 @@ This script:
 4. Saves to memory_embeddings.pkl for fast lookup during training
 
 Usage:
-    python3 precompute_embeddings.py --input /workspace/locomo/data/locomo10.json
+    python3 precompute_embeddings.py --input /workspace/memupdate/data/locomo10.json
 """
 
 import argparse

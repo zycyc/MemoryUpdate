@@ -97,7 +97,7 @@ class MemoryBrokerActor:
             import json
             from pathlib import Path
             
-            locomo_path = Path("/workspace/locomo/data/locomo10.json")
+            locomo_path = Path("/workspace/memupdate/data/locomo10.json")
             if not locomo_path.exists():
                 print(f"⚠️ LoCoMo data not found at {locomo_path}, skipping conversation memory loading")
                 return
