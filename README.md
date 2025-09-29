@@ -1,6 +1,6 @@
-# MemoryUpdate: Memory-Augmented Reinforcement Learning for LLMs
+# memupdate: Memory-Augmented Reinforcement Learning for LLMs
 
-MemoryUpdate trains LLM agents to autonomously optimize memory databases through multi-turn tool interactions using reinforcement learning. The system uses GRPO (w/ a bag of tricks from followup work like Dr. GRPO, DeepSWE, etc.) with distributed training via Ray, SGLang, and FSDP on the LoCoMo dataset.
+memupdate trains LLM agents to autonomously optimize memory databases through multi-turn tool interactions using reinforcement learning. The system uses GRPO (w/ a bag of tricks from followup work like Dr. GRPO, DeepSWE, etc.) with distributed training via Ray, SGLang, and FSDP on the LoCoMo dataset.
 
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
@@ -35,12 +35,12 @@ hf download Qwen/Qwen3-Embedding-0.6B
 
 ### Step 1: Clone Repository
 
-git clone this repo using ssh or https
+git clone this repo using ssh or https (we call this `memupdate` for convenience)
 ```bash
-git clone git@github.com:zycyc/MemoryUpdate.git
+git clone git@github.com:zycyc/MemoryUpdate.git memupdate
 ```
 ```bash
-git clone https://github.com/zycyc/MemoryUpdate.git
+git clone https://github.com/zycyc/MemoryUpdate.git memupdate
 ```
 
 ### Step 2: Configure Environment Variables
@@ -183,7 +183,7 @@ where:
 ## Project Structure
 
 ```
-MemoryUpdate/
+memupdate/
 ├── memupdate/
 │   ├── tools/                      # 6 memory management tools
 │   │   ├── base_memory_tool.py     # Ray Actor memory broker
@@ -218,7 +218,7 @@ For a detailed walkthrough of the training pipeline with exact line numbers and 
 - **Training Phase**: Complete training loop with GRPO updates
 - **Key Components**: Namespace management, memory flow, and tool execution details
 
-This is helpful for understanding how MemoryUpdate integrates with the verl framework and where to look in the codebase for specific functionality.
+This is helpful for understanding how memupdate integrates with the verl framework and where to look in the codebase for specific functionality.
 
 ## Built With
 
