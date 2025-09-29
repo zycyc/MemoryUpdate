@@ -223,7 +223,7 @@ This is helpful for understanding how MemoryUpdate integrates with the verl fram
 - [verl](https://github.com/volcengine/verl) - RL training framework
 - [SGLang](https://github.com/sgl-project/sglang) - Multi-turn inference
 - [LangMem](https://github.com/langchain-ai/langmem) - Memory management
-- [LoCoMo](https://locomo-bench.github.io/) - Long-context memory benchmark
+- [LoCoMo](https://github.com/snap-research/locomo) - Long-context memory benchmark
 
 ## License
 
