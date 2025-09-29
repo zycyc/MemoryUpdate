@@ -1,0 +1,11 @@
+# Tool configuration for verl framework
+# NOTE: Tools ignore config parameters - they use hardcoded values
+# Only 'type: "native"' is required by verl for custom tool registration
+tools:
+  - class_name: "memupdate.tools.manage_memory.ManageMemoryTool"
+    config:
+      type: "native"  # REQUIRED by verl for custom tools
+
+  - class_name: "memupdate.tools.search_memory.SearchMemoryTool"
+    config:
+      type: "native"  # REQUIRED by verl for custom tools

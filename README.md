@@ -1,0 +1,234 @@
+# MemoryUpdate: Memory-Augmented Reinforcement Learning for LLMs
+
+MemoryUpdate trains LLM agents to autonomously optimize memory databases through multi-turn tool interactions using reinforcement learning. The system uses GRPO (w/ a bag of tricks from followup work like Dr. GRPO, DeepSWE, etc.) with distributed training via Ray, SGLang, and FSDP on the LoCoMo dataset.
+
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+
+## Overview
+
+**Core Innovation**: Rather than receiving memory in static prompts, the agent actively discovers and modifies memory through function calls, optimizing for improved question-answering performance.
+
+## Quick Start
+
+### Prerequisites
+
+- The repo has been tested on a node of 8 H100s + a remotely served model for LLM-as-judge reward
+- Docker from verl: `verlai/verl:app-verl0.5-transformers4.55.4-sglang0.4.10.post2-mcore0.13.0-te2.2` (see [this link](https://verl.readthedocs.io/en/latest/start/install.html))
+
+#### Required HuggingFace Models
+
+The training system requires two models to be downloaded to your HuggingFace cache:
+
+1. **Qwen3-8B** (main training model)
+2. **Qwen3-Embedding-0.6B** (for memory embeddings)
+
+**Download models:**
+
+```bash
+# Download Qwen3-8B model
+huggingface-cli download Qwen/Qwen3-8B
+
+# Download Qwen3-Embedding-0.6B model
+huggingface-cli download Qwen/Qwen3-Embedding-0.6B
+```
+
+**Find the model snapshot path (needed for training config):**
+
+After starting the Docker container (see Step 4), run:
+
+```bash
+# Enter container
+docker exec -it verl_container bash
+
+# Find Qwen3-8B snapshot path
+ls -la /root/.cache/huggingface/hub/models--Qwen--Qwen3-8B/snapshots/
+
+# The output will show a directory like: 123abc456def7890fedcba0987654321abcdef12
+# This is your snapshot ID - you'll need to update run_training_container.sh with this path
+```
+
+**Update the model path in `run_training_container.sh`:**
+
+Find line 63 and update the snapshot ID to match your downloaded model:
+```bash
+actor_rollout_ref.model.path=/root/.cache/huggingface/hub/models--Qwen--Qwen3-8B/snapshots/YOUR_SNAPSHOT_ID
+```
+
+### Step 1: Clone Repository with Submodules
+
+git clone this repo
+
+### Step 2: Configure Environment Variables
+
+Copy the example environment file and edit it with your configuration:
+
+```bash
+cp .env.example .env
+# Edit .env and set:
+# - LITELLM_API_KEY (required for LLM-as-judge evaluation)
+# - EVALUATOR_URL (required for LLM evaluator server)
+# - WANDB_API_KEY (optional for experiment tracking)
+```
+
+**Required settings:**
+- `LITELLM_API_KEY`: Your LiteLLM or OpenAI API key for reward computation
+- `EVALUATOR_URL`: URL of your LiteLLM or OpenAI-compatible API server (e.g., `http://localhost:8000/v1`)
+
+**Optional settings:**
+- `WANDB_API_KEY`: For logging training metrics to Weights & Biases
+
+### Step 3: LoCoMo Dataset
+
+The LoCoMo dataset is included in the repository at `data/locomo10.json`. No additional download is required.
+
+### Step 4: Start Docker Container
+
+```bash
+# Run the container startup script
+bash start_docker_with_init.sh
+```
+
+This script will:
+- Pull the verl Docker image (`verlai/verl:app-verl0.5-transformers4.55.4-sglang0.4.10.post2-mcore0.13.0-te2.2`)
+- Start container with GPU support and required permissions
+- Install dependencies (langmem, memupdate package)
+- Apply Python 3.10 compatibility patches
+
+The container will be named `verl_container` and run in the background.
+
+### Step 5: Prepare Data
+
+```bash
+# Enter the container and preprocess data
+docker exec verl_container bash -c "cd /workspace/memupdate && python3 memupdate/data/preprocess_locomo.py"
+
+# Enter the container and precompute embeddings
+docker exec verl_container bash -c "cd /workspace/memupdate && python3 memupdate/data/precompute_embeddings.py"
+```
+
+
+### Step 6: Run Training
+
+```bash
+# Enter the container and start training
+docker exec verl_container bash -c "cd /workspace/memupdate && bash run_training_container.sh"
+```
+
+Training will:
+1. Preprocess LoCoMo data if not already done
+2. Initialize Ray distributed cluster
+3. Load Qwen3-8B model with FSDP
+4. Start SGLang multi-turn tool calling server
+5. Run GRPO training for 100 epochs
+6. Log metrics to WandB (if configured)
+
+## Architecture
+
+### Training Flow
+
+```
+LoCoMo Dataset (1,986 QA pairs)
+    ↓
+Preprocessing → Train/Test Split (7/3 conversations)
+    ↓
+Ray Actor Memory Broker (shared namespace isolation)
+    ↓
+Agent Episode:
+  1. Initial memories loaded into trial namespace
+  2. Agent calls search_memory() to discover state
+  3. Agent uses manage/merge/split tools to optimize
+  4. Tools modify shared memory via Ray Actor
+    ↓
+Reward Computation (LLM-as-Judge):
+  1. Retrieve top-5 memories from initial state
+  2. Retrieve top-5 memories from modified state
+  3. Generate answers for target question using both
+  4. Binary correctness judgment (1/0) from LLM
+  5. Reward = correct_new - correct_old + format_bonus
+    ↓
+GRPO Policy Update → Next Episode
+```
+
+### Memory Management Tools
+
+1. **SearchMemoryTool**: RAG-based retrieval using semantic similarity
+2. **ManageMemoryTool**: Create/update episodic, semantic, or procedural memories
+3. **DeleteMemoryTool**: Remove memories by ID
+4. **SampleMemoryTool**: Random, diverse, or recent memory sampling
+5. **MergeMemoryTool**: Consolidate related memories (summarize/concatenate/extract)
+6. **SplitMemoryTool**: Decompose complex memories (temporal/thematic/speaker-based)
+
+### Reward System
+
+The custom `MemoryRewardManager` uses an LLM-as-judge approach:
+
+```python
+# Binary correctness evaluation
+reward = correct_new (1/0) - correct_old (1/0) + format_reward
+
+where:
+- correct_new: LLM judge verdict on answer from modified memories
+- correct_old: LLM judge verdict on answer from initial memories
+- format_reward: +0.1 if agent created any memories, -1.0 if none
+```
+
+**Evaluation Process**:
+1. Retrieve top-5 relevant memories from both states
+2. Generate answer from context using LLM
+3. Compare generated answer vs. ground truth using LLM judge
+4. Return binary correctness (no reward shaping)
+
+## Project Structure
+
+```
+MemoryUpdate/
+├── memupdate/
+│   ├── tools/                      # 6 memory management tools
+│   │   ├── base_memory_tool.py     # Ray Actor memory broker
+│   │   ├── search_memory.py
+│   │   ├── manage_memory.py
+│   ├── rewards/
+│   │   └── memory_reward.py        # LLM-as-judge reward manager
+│   └── data/
+│       ├── preprocess_locomo.py    # Dataset preprocessing
+│       ├── precompute_embeddings.py # Embedding cache generation
+│       └── locomo/                 # Generated training data
+├── verl/                           # Submodule: verl RL framework
+├── configs/
+│   ├── locomo_memory_grpo.yaml     # Training configuration
+│   └── tool_config/
+│       └── memory_tools.yaml       # Tool definitions for verl
+├── config/
+│   └── evaluator_config.yaml.example  # LLM evaluator config template
+├── .env.example                    # Environment variables template
+├── start_docker_with_init.sh       # Container startup script
+├── run_training_container.sh       # Training execution script
+├── annotated_workflow.md           # Detailed training pipeline documentation
+└── README.md                       # This file
+```
+
+## Training Pipeline Details
+
+For a detailed walkthrough of the training pipeline with exact line numbers and code references, see [`annotated_workflow.md`](annotated_workflow.md). This document explains:
+
+- **Data Preprocessing**: How LoCoMo dataset is processed and namespaces are created
+- **Validation Phase**: Step-by-step validation flow with verl integration
+- **Training Phase**: Complete training loop with GRPO updates
+- **Key Components**: Namespace management, memory flow, and tool execution details
+
+This is helpful for understanding how MemoryUpdate integrates with the verl framework and where to look in the codebase for specific functionality.
+
+## Built With
+
+- [verl](https://github.com/volcengine/verl) - RL training framework
+- [SGLang](https://github.com/sgl-project/sglang) - Multi-turn inference
+- [LangMem](https://github.com/langchain-ai/langmem) - Memory management
+- [LoCoMo](https://locomo-bench.github.io/) - Long-context memory benchmark
+
+## License
+
+[MIT](LICENSE)
+
+## Acknowledgments
+
+This work builds on the verl framework from ByteDance Seed Team and uses the LoCoMo benchmark dataset. Special thanks to the verl and SGLang communities for their support.
